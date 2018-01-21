@@ -1,8 +1,8 @@
 (function (root) {
     var WATER = root.SHRI_ISLANDS.WATER;
     var ISLAND = root.SHRI_ISLANDS.ISLAND;
-    var VISITED = true;
-    var SPEED = 500;
+    var EXPLORED = true;
+    var SPEED = 300;
 
     var delayedDraw = delay(draw);
 
@@ -30,7 +30,7 @@
                     if (currentCall < args.length) {
                         func.apply(null, args[currentCall++]);
 
-                        setTimeout(delayed, SPEED);
+                        timerId = setTimeout(delayed, SPEED);
                     } else {
                         timerId = null;
                     }
@@ -91,45 +91,47 @@
 
         var mapLength = map.length;
         var mapWidth = map[0].length;
-
         var count = 0;
 
-        var visited = new Array(mapLength);
+        var explored = new Array(mapLength);
         for (var i = 0; i < mapLength; i++) {
-            visited[i] = new Array(mapWidth);
-        }
-
-        var findNextLand = function(y, x, countLand) {
-            if (y > 0) visit(y - 1, x, countLand);
-            if (x > 0) visit(y, x - 1, countLand);
-            if (x < mapWidth - 1) visit(y, x + 1, countLand);
-            if (y < mapLength - 1) visit(y + 1, x, countLand);
-        }
-
-        var visit = function(i, j, countLand) {
-            if ( visited[i][j] ) return;
-
-            visited[i][j] = VISITED;
-
-            if (map[i][j] === WATER) {
-                delayedDraw(i, j, map[i][j]);
-            } else {
-                if (countLand) {
-                    count++;
-                    countLand = false;
-                }
-
-                delayedDraw(i, j, map[i][j], count);
-
-                findNextLand(i, j, countLand);
-            }
+            explored[i] = new Array(mapWidth);
         }
 
         for (var i = 0; i < mapLength; i++) {
             for (var j = 0; j < mapWidth; j++) {
-                visit(i, j, true);
+                explore(i, j, true);
             }
         }
+
+        function explore(i, j, lookForNewIsland) {
+            if (explored[i][j]) return;
+
+            explored[i][j] = EXPLORED;
+
+            var cell = map[i][j];
+
+            if (cell === WATER) {
+                delayedDraw(i, j, cell);
+            } else {
+                if (lookForNewIsland) {
+                    delayedDraw(i, j, cell, ++count);
+                } else {
+                    delayedDraw(i, j, cell);
+                }
+
+                exploreIsland(i, j);
+            }
+        }
+
+        function exploreIsland(i, j) {
+            if (i > 0) explore(i - 1, j, false); // вверх
+            if (j < mapWidth - 1) explore(i, j + 1, false); // направо
+            if (i < mapLength - 1) explore(i + 1, j, false); // вниз
+            if (j > 0) explore(i, j - 1, false); // налево
+        }
+
+        return count;
     }
 
     root.SHRI_ISLANDS.visualizeSolution = visualizeSolution;
